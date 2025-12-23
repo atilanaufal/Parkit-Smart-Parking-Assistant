@@ -1,4 +1,4 @@
-# Parkit - Smart Parking Assistant
+# parkit_smart_parking_assistant
 
 A new Flutter project.
 

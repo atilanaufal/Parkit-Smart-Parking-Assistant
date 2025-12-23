@@ -7,3 +7,24 @@ final Map<String, String> motorTypeAssets = {
   "matic": "assets/icons/matic_motor.png",
   "sport": "assets/icons/sport_motor.png",
 };
+
+String motorTypeLabel(String key) {
+  switch (key) {
+    case "bebek":
+      return "Bebek";
+    case "matic":
+      return "Matic";
+    case "sport":
+      return "Sport";
+    case "moge":
+      return "Moge";
+    case "adventure":
+      return "Adventure";
+    case "listrik":
+      return "Motor Listrik";
+    case "sepeda":
+      return "Sepeda";
+    default:
+      return key.toUpperCase();
+  }
+}

@@ -2,25 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:parkit_smart_parking_assistant/config/helper/motor_type.dart';
 
 class UserMotorCard extends StatelessWidget {
-  final String motorName;
-  final String dimension;
+  final String brand;
+  final String model; // matic, cub, sport, electric
+  final int lengthCm;
+  final int widthCm;
   final String colorName;
-  final String type; // <---- TAMBAH INI
   final VoidCallback onDelete;
   final VoidCallback? onEdit;
 
   const UserMotorCard({
     super.key,
-    required this.motorName,
-    required this.dimension,
+    required this.brand,
+    required this.model,
+    required this.lengthCm,
+    required this.widthCm,
     required this.colorName,
-    required this.type, // <---- TAMBAH INI
     required this.onDelete,
     this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
+    final String safeModel = motorTypeAssets.containsKey(model)
+        ? model
+        : 'matic';
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -34,15 +40,12 @@ class UserMotorCard extends StatelessWidget {
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              // ===========================================================
-              //   ICON MOTOR DARI GAMBAR (TYPE)
-              // ===========================================================
+              // ================= ICON MOTOR =================
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -50,37 +53,46 @@ class UserMotorCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Image.asset(
-                  motorTypeAssets[type] ?? motorTypeAssets["matic_motor"]!,
+                  motorTypeAssets[safeModel]!,
                   width: 32,
                   height: 32,
-                  color: Colors.white, // membuat icon putih
+                  color: Colors.white,
                 ),
               ),
 
               const SizedBox(width: 14),
 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    motorName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+              // ================= INFO =================
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      brand,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Dimensi: $dimension",
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Warna: $colorName",
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      "Dimensi: ${lengthCm} x ${widthCm} cm",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Warna: ${colorName.isEmpty ? "-" : colorName}",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -110,6 +122,9 @@ class UserMotorCard extends StatelessWidget {
   }
 }
 
+// ===========================================================
+// SMALL BUTTON
+// ===========================================================
 class _SmallActionButton extends StatelessWidget {
   final IconData icon;
   final String label;

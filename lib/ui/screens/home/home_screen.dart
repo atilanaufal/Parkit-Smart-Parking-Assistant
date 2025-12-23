@@ -4,12 +4,14 @@ import 'package:parkit_smart_parking_assistant/logic/getx/controller/parking_loc
 import 'package:parkit_smart_parking_assistant/ui/widgets/simple_parking_map.dart';
 import 'package:parkit_smart_parking_assistant/logic/getx/controller/user_motor_controller.dart';
 import 'package:parkit_smart_parking_assistant/ui/widgets/user_motor_section.dart';
+import 'package:parkit_smart_parking_assistant/logic/getx/controller/parking_slot_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
 
   final ParkingLocationController pc = Get.find();
   final UserMotorController motor = Get.find<UserMotorController>();
+  final ParkingSlotController slots = Get.find<ParkingSlotController>();
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +157,19 @@ class HomeScreen extends StatelessWidget {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
+              final row = pc.usedRow;
+              final spaceId = pc.usedSpaceId;
+
+              if (row != null && spaceId != null) {
+                slots.releaseSlot(
+                  row: pc.usedRow!,
+                  spaceId: pc.usedSpaceId!,
+                  wasExhausted: pc.lastSlotWasExhausted,
+                );
+              }
+
               pc.clearParking();
+
               Navigator.pop(context);
             },
             child: const Text(

@@ -1,3 +1,4 @@
+// lib/ui/widgets/simple_parking_map.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:parkit_smart_parking_assistant/logic/getx/controller/parking_location_controller.dart';
@@ -8,7 +9,7 @@ class SimpleParkingMapCard extends StatelessWidget {
 
   final ParkingLocationController pc = Get.find();
 
-  ParkingSlotController? _maybeSlotController() {
+  ParkingSlotController? _slotController() {
     try {
       return Get.find<ParkingSlotController>();
     } catch (_) {
@@ -54,16 +55,12 @@ class SimpleParkingMapCard extends StatelessWidget {
 
   // ==================== SUDAH PARKIR ====================
   Widget _parkedView() {
-    final String baris = pc.baris.value; // ex: A2
-    final String huruf = baris[0]; // A
-
-    // Lokasi selalu A1 dan A2 (atau B1, B2; C1, C2)
-    final List<String> lokasiList = ["${huruf}2", "${huruf}1"];
+    final String rowIndex = pc.baris.value; // "0" - "9"
 
     final int userSlot =
-        int.tryParse(pc.slot.value.replaceAll("Slot - ", "")) ?? -1;
+        int.tryParse(pc.slot.value.replaceAll(RegExp(r'[^0-9]'), '')) ?? -1;
 
-    final slotController = _maybeSlotController();
+    final slotController = _slotController();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -78,105 +75,105 @@ class SimpleParkingMapCard extends StatelessWidget {
           ),
         ],
       ),
-
-      // =============== VERTIKAL ================
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: lokasiList.map((lokasi) {
-          return _lokasiBlock(lokasi, userSlot, slotController);
-        }).toList(),
-      ),
+      child: _lokasiBlock(rowIndex, userSlot, slotController),
     );
   }
 
-  // BLOCK: 1 lokasi (A1 / A2)
+  // ==================== BLOK LOKASI (SATU BARIS) ====================
   Widget _lokasiBlock(
-    String lokasi,
+    String rowIndex,
     int userSlot,
     ParkingSlotController? slotController,
   ) {
-    final bool isUserLokasi = lokasi == pc.baris.value;
+    // slot kosong nyata
+    final List<Map<String, dynamic>> emptySlots =
+        slotController?.slotData.where((s) => s['row'] == rowIndex).toList() ??
+        [];
 
-    // Ambil slot real untuk lokasi ini
-    final List<Map<String, dynamic>> realSlots =
-        slotController?.slotData.where((s) => s["id"] == lokasi).toList() ?? [];
+    // slot terisi dari motor_id
+    final Set<int> occupiedSlots =
+        slotController?.getFinalOccupiedSlots(rowIndex) ?? {};
 
-    // Urutkan slot berdasarkan angka
-    realSlots.sort((a, b) {
-      final an = int.tryParse(a["slot"].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-      final bn = int.tryParse(b["slot"].replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-      return an.compareTo(bn);
-    });
+    // kumpulkan semua slot yang relevan
+    final Set<int> slotNumbers = {};
 
-    // Group slot per 5 kolom MAX
-    List<List<Map<String, dynamic>>> grouped = [];
-    for (int i = 0; i < realSlots.length; i += 5) {
+    // slot kosong
+    for (final s in emptySlots) {
+      final n = int.tryParse(s['slot_label']) ?? -1;
+      if (n > 0) slotNumbers.add(n);
+    }
+
+    // slot terisi
+    slotNumbers.addAll(occupiedSlots);
+
+    // slot user
+    if (userSlot > 0) slotNumbers.add(userSlot);
+
+    final List<int> slots = slotNumbers.toList()..sort();
+
+    // group max 5 kolom
+    final List<List<int>> grouped = [];
+    for (int i = 0; i < slots.length; i += 5) {
       grouped.add(
-        realSlots.sublist(
-          i,
-          i + 5 > realSlots.length ? realSlots.length : i + 5,
-        ),
+        slots.sublist(i, i + 5 > slots.length ? slots.length : i + 5),
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // HEADER
         Text(
-          "${pc.parkir.value} • Lokasi $lokasi",
+          "${pc.parkir.value} • Baris $rowIndex",
           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 10),
 
-        // TIAP BARIS (MAX 5 slot)
         ...grouped.map((rowSlots) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
-              children: rowSlots.map((slotItem) {
-                final slotNum =
-                    int.tryParse(
-                      slotItem["slot"].replaceAll(RegExp(r'[^0-9]'), ''),
-                    ) ??
-                    -1;
-
-                final bool occupied = slotItem["occupied"] == true;
-                final bool highlight = isUserLokasi && slotNum == userSlot;
+              children: rowSlots.map((slotNum) {
+                final bool isUser = slotNum == userSlot;
+                final bool isOccupied = occupiedSlots.contains(slotNum);
+                final bool isEmpty = emptySlots.any(
+                  (s) => s['slot_label'] == slotNum.toString(),
+                );
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
-                    width: 55, // diperkecil supaya 5 kolom muat rapi
+                    width: 55,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                      ), // lebih kecil
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
-                        color: occupied ? Colors.red : Colors.green,
-                        borderRadius: BorderRadius.circular(
-                          10,
-                        ), // radius lebih kecil
-                        border: highlight
-                            ? Border.all(color: Colors.blueAccent, width: 5)
+                        color: isUser
+                            ? Colors.blue
+                            : isOccupied
+                            ? Colors.red
+                            : isEmpty
+                            ? Colors.green
+                            : Colors.grey,
+                        borderRadius: BorderRadius.circular(10),
+                        border: isUser
+                            ? Border.all(color: Colors.blueAccent, width: 4)
                             : null,
                       ),
                       child: Column(
                         children: [
                           Text(
-                            lokasi,
+                            "R$rowIndex",
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 11, // lebih kecil
+                              fontSize: 11,
                             ),
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            slotItem["slot"],
+                            "Slot $slotNum",
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 10, // lebih kecil
+                              fontSize: 10,
                             ),
                           ),
                         ],

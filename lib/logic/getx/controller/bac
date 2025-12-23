@@ -1,0 +1,41 @@
+import 'package:get/get.dart';
+import 'package:parkit_smart_parking_assistant/services/parking_service.dart';
+
+class ParkingSlotController extends GetxController {
+  final slotData = <Map<String, dynamic>>[].obs;
+
+  Future<void> loadFromSession(String sessionId) async {
+    final result = await ParkingService.fetchSession(sessionId);
+    if (result['best_frame'] == null) return;
+    final bestFrame = result['best_frame'];
+    final List<Map<String, dynamic>> slots = [];
+    final List emptySpaces = bestFrame['empty_spaces'] ?? [];
+    final List detections = bestFrame['detections'] ?? [];
+
+    // Ambil semua row_index dan space_id dari deteksi (untuk occupied)
+    final occupiedSet = <String>{};
+    for (final d in detections) {
+      final row = d['assigned_row'] ?? d['row_index'];
+      final spaceId = d['space_id'];
+      if (row != null && spaceId != null) {
+        occupiedSet.add('$row|$spaceId');
+      }
+    }
+
+    // slotData hanya dari empty_spaces
+    for (final s in emptySpaces) {
+      final row = s['row_index'];
+      final spaceId = s['space_id'] ?? '-';
+      final key = '$row|$spaceId';
+      slots.add({
+        'id': 'Baris - $row',
+        'row_index': row,
+        'slot': 'Slot - $spaceId',
+        'space_id': spaceId,
+        'occupied': occupiedSet.contains(key),
+        'can_fit_motorcycle': s['can_fit_motorcycle'],
+      });
+    }
+    slotData.assignAll(slots);
+  }
+}
