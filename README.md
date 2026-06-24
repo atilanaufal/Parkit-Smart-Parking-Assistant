@@ -152,13 +152,3 @@ Based on the project's deep learning evaluations:
 * **API Response Latency:** **52ms (average)** under load testing
 
 ---
-
-## 👤 Development Team
-This project was developed as part of academic/industry coursework:
-* **Athillah Naufal Al-Falah** (2023071002)
-* **Muhammad Afif Alfatih** (2023071005)
-* **Daffa Ma'ruff** (2023071008)
-* **Fikri Armia Fahmi** (2023071018)
-* **Adrianus** (2023071057)
-
-*Department of Informatics, Faculty of Technology and Design, Universitas Pembangunan Jaya, 2025/2026.*
